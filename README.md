@@ -1,6 +1,6 @@
 # cmdkit
 
-![Version](https://img.shields.io/badge/version-0.1.2-blue)
+![Version](https://img.shields.io/badge/version-0.1.3-blue)
 
 A lightweight CLI tool for saving, organizing, and running reusable shell command workflows.
 
@@ -28,7 +28,7 @@ iwr https://raw.githubusercontent.com/arnav-khandelwal/cmdkit/main/install.ps1 -
 - **Rich output** – Clean, readable terminal output with tables and colors
 
 ## Status
-cmdkit is in early development (v0.1.0).
+cmdkit is in early development (v0.1.3).
 Core workflow creation and execution are stable.
 Editing and advanced management features are planned.
 

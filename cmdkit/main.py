@@ -7,9 +7,35 @@ from typing import List, Optional
 
 import typer
 from jinja2 import Template
+from rich.console import Console
+from rich.table import Table
 
 from cmdkit import __version__
 from cmdkit.storage import load_config, save_config
+
+# Rich console for styled output
+console = Console()
+err_console = Console(stderr=True)
+
+
+def print_success(message: str) -> None:
+    """Print a success message with checkmark."""
+    console.print(f"[green]✔[/green] {message}")
+
+
+def print_error(message: str) -> None:
+    """Print an error message with X mark."""
+    err_console.print(f"[red]✖[/red] {message}")
+
+
+def print_info(message: str) -> None:
+    """Print an info message."""
+    console.print(f"[dim]→[/dim] {message}")
+
+
+def print_header(message: str) -> None:
+    """Print a section header."""
+    console.print(f"\n[bold]{message}[/bold]")
 
 app = typer.Typer(
     name="cmdkit",
@@ -21,13 +47,13 @@ app = typer.Typer(
 def version_callback(value: bool) -> None:
     """Print version and exit."""
     if value:
-        print(f"cmdkit version {__version__}")
+        console.print(f"cmdkit version [cyan]{__version__}[/cyan]")
         raise typer.Exit()
 
 def arnav(value: bool) -> None:
     """Just to test option parsing."""
     if value:
-        print("Arnav option activated.")
+        console.print("Arnav option activated.")
         raise typer.Exit()
 
 @app.callback()
@@ -54,8 +80,8 @@ def main(
 @app.command()
 def init() -> None:
     """Initialize a new cmdkit project."""
-    print("Initializing cmdkit project...")
-    print("(Not implemented yet)")
+    print_info("Initializing cmdkit project...")
+    console.print("[dim](Not implemented yet)[/dim]")
 
 
 @app.command()
@@ -66,7 +92,7 @@ def save(
     """Save a named workflow with one or more commands."""
     # Validate at least one command
     if not commands:
-        print("Error: At least one command is required.")
+        print_error("At least one command is required.")
         raise typer.Exit(1)
     
     # Load existing config
@@ -74,7 +100,7 @@ def save(
     
     # Check if workflow already exists
     if name in config["workflows"]:
-        print(f"Error: Workflow '{name}' already exists.")
+        print_error(f"Workflow [bold]{name}[/bold] already exists.")
         raise typer.Exit(1)
     
     # Detect placeholders using {{variable}} pattern
@@ -92,9 +118,9 @@ def save(
     save_config(config)
     
     # Print success message
-    print(f"Saved workflow '{name}' with {len(commands)} command(s).")
+    print_success(f"Saved workflow [bold]{name}[/bold] with {len(commands)} command(s).")
     if placeholders:
-        print(f"Detected placeholders: {', '.join(sorted(placeholders))}")
+        print_info(f"Detected placeholders: [cyan]{', '.join(sorted(placeholders))}[/cyan]")
 
 
 def extract_placeholders(commands: List[str]) -> set:
@@ -142,7 +168,8 @@ def collect_placeholder_values(
     # Prompt for missing placeholders
     for placeholder in sorted(placeholders):
         if placeholder not in values:
-            values[placeholder] = input(f"Enter value for {{{{{placeholder}}}}}: ")
+            console.print(f"[dim]Enter value for[/dim] [cyan]{{{{{placeholder}}}}}[/cyan]: ", end="")
+            values[placeholder] = input()
     
     return values
 
@@ -161,7 +188,7 @@ def run(
     
     # Check if workflow exists
     if workflow_name not in config["workflows"]:
-        print(f"Error: Workflow '{workflow_name}' not found.")
+        print_error(f"Workflow [bold]{workflow_name}[/bold] not found.")
         raise typer.Exit(1)
     
     workflow = config["workflows"][workflow_name]
@@ -178,21 +205,23 @@ def run(
     
     # Dry-run mode: just print and exit
     if dry:
-        print(f"Dry run for workflow '{workflow_name}':")
+        print_header(f"Dry run: {workflow_name}")
         for i, cmd in enumerate(rendered, 1):
-            print(f"  [{i}] {cmd}")
+            console.print(f"  [dim][{i}][/dim] [cyan]{cmd}[/cyan]")
         raise typer.Exit(0)
     
     # Execute commands sequentially
-    print(f"Running workflow '{workflow_name}'...")
+    print_header(f"Running: {workflow_name}")
     for i, cmd in enumerate(rendered, 1):
-        print(f"\n[{i}/{len(rendered)}] {cmd}")
+        console.print(f"\n[dim][{i}/{len(rendered)}][/dim] [bold]{cmd}[/bold]")
         result = subprocess.run(cmd, shell=True)
         if result.returncode != 0:
-            print(f"\nError: Command failed with exit code {result.returncode}")
+            print_error(f"Command failed with exit code {result.returncode}")
             raise typer.Exit(result.returncode)
+        print_success("Done")
     
-    print(f"\nWorkflow '{workflow_name}' completed successfully.")
+    console.print()
+    print_success(f"Workflow [bold]{workflow_name}[/bold] completed successfully.")
 
 
 @app.command("list")
@@ -204,7 +233,7 @@ def list_workflows(
     workflows = config["workflows"]
     
     if not workflows:
-        print("No workflows saved yet.")
+        print_info("No workflows saved yet.")
         raise typer.Exit(0)
     
     # Filter by tag if specified
@@ -214,17 +243,21 @@ def list_workflows(
             if tag_filter in wf.get("tags", [])
         }
         if not filtered:
-            print(f"No workflows found with tag '{tag_filter}'.")
+            print_info(f"No workflows found with tag [cyan]{tag_filter}[/cyan].")
             raise typer.Exit(0)
         workflows = filtered
     
-    # Print workflows
+    # Create table
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Name")
+    table.add_column("Tags")
+    
     for name, wf in sorted(workflows.items()):
         tags = wf.get("tags", [])
-        if tags:
-            print(f"{name} [{', '.join(tags)}]")
-        else:
-            print(name)
+        tag_str = ", ".join(tags) if tags else "[dim]-[/dim]"
+        table.add_row(name, tag_str)
+    
+    console.print(table)
 
 
 @app.command()
@@ -237,7 +270,7 @@ def tag(
     
     # Check if workflow exists
     if workflow_name not in config["workflows"]:
-        print(f"Error: Workflow '{workflow_name}' not found.")
+        print_error(f"Workflow [bold]{workflow_name}[/bold] not found.")
         raise typer.Exit(1)
     
     workflow = config["workflows"][workflow_name]
@@ -245,12 +278,12 @@ def tag(
     
     # Add tag if not already present
     if tag_name in tags:
-        print(f"Workflow '{workflow_name}' already has tag '{tag_name}'.")
+        print_info(f"Workflow [bold]{workflow_name}[/bold] already has tag [cyan]{tag_name}[/cyan].")
     else:
         tags.append(tag_name)
         workflow["tags"] = tags
         save_config(config)
-        print(f"Added tag '{tag_name}' to workflow '{workflow_name}'.")
+        print_success(f"Added tag [cyan]{tag_name}[/cyan] to workflow [bold]{workflow_name}[/bold].")
 
 
 @app.command()
@@ -262,7 +295,7 @@ def search(
     workflows = config["workflows"]
     
     if not workflows:
-        print("No workflows saved yet.")
+        print_info("No workflows saved yet.")
         raise typer.Exit(0)
     
     query_lower = query.lower()
@@ -291,19 +324,25 @@ def search(
             matches.append((name, wf, score))
     
     if not matches:
-        print(f"No workflows found matching '{query}'.")
+        print_info(f"No workflows found matching [cyan]{query}[/cyan].")
         raise typer.Exit(0)
     
     # Sort by score (highest first)
     matches.sort(key=lambda x: (-x[2], x[0]))
     
-    print(f"Found {len(matches)} workflow(s) matching '{query}':")
+    console.print(f"Found [bold]{len(matches)}[/bold] workflow(s) matching [cyan]{query}[/cyan]:\n")
+    
+    # Create table
+    table = Table(show_header=True, header_style="bold")
+    table.add_column("Name")
+    table.add_column("Tags")
+    
     for name, wf, score in matches:
         tags = wf.get("tags", [])
-        if tags:
-            print(f"  {name} [{', '.join(tags)}]")
-        else:
-            print(f"  {name}")
+        tag_str = ", ".join(tags) if tags else "[dim]-[/dim]"
+        table.add_row(name, tag_str)
+    
+    console.print(table)
 
 
 if __name__ == "__main__":

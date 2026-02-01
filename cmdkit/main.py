@@ -181,8 +181,15 @@ def run(
     ctx: typer.Context,
     workflow_name: str = typer.Argument(..., help="Name of the workflow to run"),
     dry: bool = typer.Option(False, "--dry", "--dry-run", help="Preview commands without executing"),
+    stop_on_fail: bool = typer.Option(False, "--stop-on-fail", "-f", help="Stop execution on first failure (chain with &&)"),
+    stop_on_success: bool = typer.Option(False, "--stop-on-success", "-s", help="Stop execution on first success (chain with ||)"),
 ) -> None:
     """Run a saved workflow with placeholder substitution."""
+    # Validate mutually exclusive options
+    if stop_on_fail and stop_on_success:
+        print_error("Cannot use --stop-on-fail and --stop-on-success together.")
+        raise typer.Exit(1)
+    
     # Load config
     config = load_config()
     
@@ -206,19 +213,53 @@ def run(
     # Dry-run mode: just print and exit
     if dry:
         print_header(f"Dry run: {workflow_name}")
+        if stop_on_fail:
+            console.print(f"  [dim]Mode:[/dim] stop on first failure (&&)")
+        elif stop_on_success:
+            console.print(f"  [dim]Mode:[/dim] stop on first success (||)")
+        else:
+            console.print(f"  [dim]Mode:[/dim] run all commands")
         for i, cmd in enumerate(rendered, 1):
             console.print(f"  [dim][{i}][/dim] [cyan]{cmd}[/cyan]")
         raise typer.Exit(0)
     
-    # Execute commands sequentially
+    # Execute based on mode
     print_header(f"Running: {workflow_name}")
-    for i, cmd in enumerate(rendered, 1):
-        console.print(f"\n[dim][{i}/{len(rendered)}][/dim] [bold]{cmd}[/bold]")
-        result = subprocess.run(cmd, shell=True)
+    
+    if stop_on_fail:
+        # Chain with && - run as single command
+        chained = " && ".join(rendered)
+        console.print(f"\n[dim]Chained (&&):[/dim] [bold]{chained}[/bold]")
+        result = subprocess.run(chained, shell=True)
         if result.returncode != 0:
             print_error(f"Command failed with exit code {result.returncode}")
             raise typer.Exit(result.returncode)
         print_success("Done")
+    elif stop_on_success:
+        # Chain with || - run as single command
+        chained = " || ".join(rendered)
+        console.print(f"\n[dim]Chained (||):[/dim] [bold]{chained}[/bold]")
+        result = subprocess.run(chained, shell=True)
+        if result.returncode != 0:
+            print_error(f"All commands failed with exit code {result.returncode}")
+            raise typer.Exit(result.returncode)
+        print_success("Done")
+    else:
+        # Default: run all commands regardless of success/failure
+        failed = []
+        for i, cmd in enumerate(rendered, 1):
+            console.print(f"\n[dim][{i}/{len(rendered)}][/dim] [bold]{cmd}[/bold]")
+            result = subprocess.run(cmd, shell=True)
+            if result.returncode != 0:
+                print_error(f"Failed with exit code {result.returncode}")
+                failed.append((i, cmd, result.returncode))
+            else:
+                print_success("Done")
+        
+        console.print()
+        if failed:
+            print_error(f"Workflow completed with {len(failed)} failed command(s).")
+            raise typer.Exit(1)
     
     console.print()
     print_success(f"Workflow [bold]{workflow_name}[/bold] completed successfully.")

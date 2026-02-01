@@ -6,6 +6,17 @@ A lightweight CLI tool for saving, organizing, and running reusable shell comman
 
 Save complex multi-step commands once, run them anywhere with placeholder substitution.
 
+## Installation
+
+### macOS / Linux
+```sh
+curl -fsSL https://raw.githubusercontent.com/arnav-khandelwal/cmdkit/main/install.sh | sh
+```
+### Windows
+```sh
+iwr https://raw.githubusercontent.com/arnav-khandelwal/cmdkit/main/install.ps1 -useb | iex
+```
+
 ## Features
 
 - **Save workflows** – Store named sequences of shell commands

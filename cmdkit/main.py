@@ -17,6 +17,11 @@ def version_callback(value: bool) -> None:
         print(f"cmdkit version {__version__}")
         raise typer.Exit()
 
+def arnav(value: bool) -> None:
+    """Just to test option parsing."""
+    if value:
+        print("Arnav option activated.")
+        raise typer.Exit()
 
 @app.callback()
 def main(
@@ -28,6 +33,12 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
+    arnav: bool = typer.Option(
+        False,
+        "--arnav", help="Just to test option parsing.",
+        callback=arnav,
+        is_eager=True,
+    )
 ) -> None:
     """cmdkit - A CLI tool for managing commands."""
     pass

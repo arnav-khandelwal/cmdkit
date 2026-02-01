@@ -1,6 +1,6 @@
 # cmdkit
 
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.1.1-blue)
 
 A lightweight CLI tool for saving, organizing, and running reusable shell command workflows.
 

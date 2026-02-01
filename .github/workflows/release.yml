@@ -19,15 +19,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
           pip install pyinstaller typer rich jinja2
 
-      - name: Build binary
+      - name: Build binary (using spec)
         run: |
-          pyinstaller --onefile cmdkit/main.py --name cmdkit
+          pyinstaller cmdkit.spec
 
       - name: Rename binary
         run: |

@@ -2,10 +2,7 @@
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
-# Collect ALL Rich data files (unicode width tables, etc.)
 datas = collect_data_files("rich")
-
-# Collect ALL Rich unicode modules (dynamic imports)
 hiddenimports = collect_submodules("rich._unicode_data")
 
 a = Analysis(
@@ -14,7 +11,7 @@ a = Analysis(
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=[],
+    hookspath=['hooks'],  
     hooksconfig={},
     runtime_hooks=[],
     excludes=[],

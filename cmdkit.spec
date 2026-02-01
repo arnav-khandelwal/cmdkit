@@ -1,12 +1,19 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
+
+# Collect ALL Rich data files (unicode width tables, etc.)
+datas = collect_data_files("rich")
+
+# Collect ALL Rich unicode modules (dynamic imports)
+hiddenimports = collect_submodules("rich._unicode_data")
 
 a = Analysis(
     ['cmdkit/main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
-    hiddenimports=['rich._unicode_data.unicode17_0_0',],
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -14,6 +21,7 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -30,9 +38,4 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True,
-    disable_windowed_traceback=False,
-    argv_emulation=False,
-    target_arch=None,
-    codesign_identity=None,
-    entitlements_file=None,
 )

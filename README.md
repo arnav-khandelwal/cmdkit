@@ -1,5 +1,7 @@
 # cmdkit
 
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+
 A lightweight CLI tool for saving, organizing, and running reusable shell command workflows.
 
 Save complex multi-step commands once, run them anywhere with placeholder substitution.
@@ -13,6 +15,11 @@ Save complex multi-step commands once, run them anywhere with placeholder substi
 - **Tags** – Organize workflows with custom tags
 - **Search** – Find workflows by name, tags, or command content
 - **Rich output** – Clean, readable terminal output with tables and colors
+
+## Status
+cmdkit is in early development (v0.1.0).
+Core workflow creation and execution are stable.
+Editing and advanced management features are planned.
 
 ## Installation
 

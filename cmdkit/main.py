@@ -66,22 +66,9 @@ def main(
         callback=version_callback,
         is_eager=True,
     ),
-    arnav: bool = typer.Option(
-        False,
-        "--arnav", help="Just to test option parsing.",
-        callback=arnav,
-        is_eager=True,
-    )
 ) -> None:
     """cmdkit - A CLI tool for managing commands."""
     pass
-
-
-@app.command()
-def init() -> None:
-    """Initialize a new cmdkit project."""
-    print_info("Initializing cmdkit project...")
-    console.print("[dim](Not implemented yet)[/dim]")
 
 
 @app.command()
@@ -289,14 +276,17 @@ def list_workflows(
         workflows = filtered
     
     # Create table
-    table = Table(show_header=True, header_style="bold")
+    table = Table(show_header=True, header_style="bold", show_lines=True)
     table.add_column("Name")
     table.add_column("Tags")
+    table.add_column("Commands")
     
     for name, wf in sorted(workflows.items()):
         tags = wf.get("tags", [])
         tag_str = ", ".join(tags) if tags else "[dim]-[/dim]"
-        table.add_row(name, tag_str)
+        commands = wf.get("commands", [])
+        cmd_str = "\n".join(commands) if commands else "[dim]-[/dim]"
+        table.add_row(name, tag_str, cmd_str)
     
     console.print(table)
 
@@ -374,14 +364,17 @@ def search(
     console.print(f"Found [bold]{len(matches)}[/bold] workflow(s) matching [cyan]{query}[/cyan]:\n")
     
     # Create table
-    table = Table(show_header=True, header_style="bold")
+    table = Table(show_header=True, header_style="bold", show_lines=True)
     table.add_column("Name")
     table.add_column("Tags")
+    table.add_column("Commands")
     
     for name, wf, score in matches:
         tags = wf.get("tags", [])
         tag_str = ", ".join(tags) if tags else "[dim]-[/dim]"
-        table.add_row(name, tag_str)
+        commands = wf.get("commands", [])
+        cmd_str = "\n".join(commands) if commands else "[dim]-[/dim]"
+        table.add_row(name, tag_str, cmd_str)
     
     console.print(table)
 

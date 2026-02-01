@@ -195,5 +195,116 @@ def run(
     print(f"\nWorkflow '{workflow_name}' completed successfully.")
 
 
+@app.command("list")
+def list_workflows(
+    tag_filter: Optional[str] = typer.Option(None, "--tag", "-t", help="Filter workflows by tag"),
+) -> None:
+    """List all saved workflows."""
+    config = load_config()
+    workflows = config["workflows"]
+    
+    if not workflows:
+        print("No workflows saved yet.")
+        raise typer.Exit(0)
+    
+    # Filter by tag if specified
+    if tag_filter:
+        filtered = {
+            name: wf for name, wf in workflows.items()
+            if tag_filter in wf.get("tags", [])
+        }
+        if not filtered:
+            print(f"No workflows found with tag '{tag_filter}'.")
+            raise typer.Exit(0)
+        workflows = filtered
+    
+    # Print workflows
+    for name, wf in sorted(workflows.items()):
+        tags = wf.get("tags", [])
+        if tags:
+            print(f"{name} [{', '.join(tags)}]")
+        else:
+            print(name)
+
+
+@app.command()
+def tag(
+    workflow_name: str = typer.Argument(..., help="Name of the workflow to tag"),
+    tag_name: str = typer.Argument(..., help="Tag to add to the workflow"),
+) -> None:
+    """Add a tag to a workflow."""
+    config = load_config()
+    
+    # Check if workflow exists
+    if workflow_name not in config["workflows"]:
+        print(f"Error: Workflow '{workflow_name}' not found.")
+        raise typer.Exit(1)
+    
+    workflow = config["workflows"][workflow_name]
+    tags = workflow.get("tags", [])
+    
+    # Add tag if not already present
+    if tag_name in tags:
+        print(f"Workflow '{workflow_name}' already has tag '{tag_name}'.")
+    else:
+        tags.append(tag_name)
+        workflow["tags"] = tags
+        save_config(config)
+        print(f"Added tag '{tag_name}' to workflow '{workflow_name}'.")
+
+
+@app.command()
+def search(
+    query: str = typer.Argument(..., help="Search term to find workflows"),
+) -> None:
+    """Search for workflows by name, tags, or commands."""
+    config = load_config()
+    workflows = config["workflows"]
+    
+    if not workflows:
+        print("No workflows saved yet.")
+        raise typer.Exit(0)
+    
+    query_lower = query.lower()
+    matches = []
+    
+    for name, wf in workflows.items():
+        score = 0
+        
+        # Exact match on name
+        if query_lower == name.lower():
+            score = 100
+        # Name contains query
+        elif query_lower in name.lower():
+            score = 80
+        # Query contains part of name
+        elif any(part in query_lower for part in name.lower().split("-")):
+            score = 60
+        # Match in tags
+        elif any(query_lower in tag.lower() for tag in wf.get("tags", [])):
+            score = 50
+        # Match in commands
+        elif any(query_lower in cmd.lower() for cmd in wf.get("commands", [])):
+            score = 30
+        
+        if score > 0:
+            matches.append((name, wf, score))
+    
+    if not matches:
+        print(f"No workflows found matching '{query}'.")
+        raise typer.Exit(0)
+    
+    # Sort by score (highest first)
+    matches.sort(key=lambda x: (-x[2], x[0]))
+    
+    print(f"Found {len(matches)} workflow(s) matching '{query}':")
+    for name, wf, score in matches:
+        tags = wf.get("tags", [])
+        if tags:
+            print(f"  {name} [{', '.join(tags)}]")
+        else:
+            print(f"  {name}")
+
+
 if __name__ == "__main__":
     app()

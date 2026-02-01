@@ -32,21 +32,6 @@ cmdkit is in early development (v0.1.0).
 Core workflow creation and execution are stable.
 Editing and advanced management features are planned.
 
-## Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/cmdkit.git
-cd cmdkit
-
-# Create a virtual environment
-python3 -m venv venv
-source venv/bin/activate
-
-# Install in development mode
-pip install -e .
-```
-
 ## Quick Start
 
 ```bash
@@ -249,4 +234,4 @@ cmdkit run --stop-on-success health-check
 
 ## License
 
-MIT
+This project is licensed under the MIT License.

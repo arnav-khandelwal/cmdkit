@@ -30,7 +30,7 @@ iwr https://raw.githubusercontent.com/arnav-khandelwal/cmdkit/main/install.ps1 -
 ## Status
 cmdkit is in early development (v0.1.3).
 Core workflow creation and execution are stable.
-Editing and advanced management features are planned.
+Editing and advanced management features will roll out soon.
 
 ## Quick Start
 
